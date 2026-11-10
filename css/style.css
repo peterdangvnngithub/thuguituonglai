@@ -11,7 +11,7 @@ body {
   background-attachment: fixed;
   color: #2b3a3f;
   line-height: 1.6;
-  padding-bottom: 60px;
+  padding-bottom: 48px;
 }
 
 #envelope-overlay {
@@ -116,7 +116,8 @@ body {
 .container.show .section-block.reveal { animation-delay: 0.3s; }
 .container.show .time-divider.reveal { animation-delay: 0.45s; }
 .container.show .section-future.reveal { animation-delay: 0.6s; }
-.container.show footer.reveal { animation-delay: 0.75s; }
+.container.show .closing-quote.reveal { animation-delay: 0.75s; }
+.container.show footer.reveal { animation-delay: 0.9s; }
 
 @keyframes rise-in {
   from {
@@ -310,6 +311,7 @@ audio {
 .section-future {
   background: #e3edec;
   border-color: #b9cccc;
+  margin-bottom: 28px;
 }
 
 .section-future .section-title {
@@ -317,12 +319,60 @@ audio {
   border-bottom-color: #9eb8b8;
 }
 
-footer {
+.closing-quote {
+  max-width: 720px;
+  margin: 0 auto;
   text-align: center;
-  padding-top: 24px;
   color: #557982;
-  font-size: 0.875rem;
+  font-size: 0.95rem;
   font-style: italic;
+  line-height: 1.7;
+}
+
+.closing-quote p {
+  margin: 0;
+}
+
+footer {
+  position: relative;
+  max-width: 440px;
+  margin: 44px auto 0;
+  padding-top: 20px;
+  text-align: center;
+}
+
+footer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 28px;
+  height: 1px;
+  margin-left: -14px;
+  background: #b5ccce;
+}
+
+.footer-label {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #7a969c;
+}
+
+.footer-names {
+  margin: 5px 0 0;
+  font-family: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  font-size: 1rem;
+  color: #34626c;
+}
+
+.footer-meta {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: #7a969c;
 }
 
 .glightbox-container .goverlay {
@@ -345,6 +395,7 @@ footer {
 
 @media (max-width: 768px) {
   header h1 { font-size: 1.85rem; letter-spacing: 0.03em; }
+  footer { margin-top: 36px; }
   .section-block { padding: 20px; flex-direction: column; }
   .col-letter, .col-gallery { width: 100%; flex: none; }
 }
