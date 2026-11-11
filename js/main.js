@@ -52,13 +52,18 @@ function renderLetter(container, src, alt, folderName, priority) {
     container.appendChild(hint);
     return;
   }
+  const link = document.createElement('a');
+  link.href = src;
+  link.className = 'glightbox';
+  link.dataset.gallery = 'thu';
   const img = document.createElement('img');
   img.src = src;
   img.alt = alt;
   img.decoding = 'async';
   if (priority) img.fetchPriority = 'high';
   else img.loading = 'lazy';
-  container.appendChild(img);
+  link.appendChild(img);
+  container.appendChild(link);
 }
 
 function renderGallery(container, images, folderName, lazy) {
