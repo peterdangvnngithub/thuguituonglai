@@ -6,6 +6,7 @@
   <title>Thư Gửi Tới Tương Lai</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="vendor/glightbox/glightbox.min.css">
+  <link rel="preload" as="image" href="image1/thu.png">
 </head>
 <body>
 
@@ -28,8 +29,7 @@
 
     <div class="audio-wrapper reveal">
       <label>Thư thoại</label>
-      <audio id="player" controls></audio>
-      <p id="audio-hint" class="empty-hint" hidden>Thêm file audio/audio.mp3 (hoặc wav, m4a, ogg).</p>
+      <audio id="player" controls preload="none" src="audio/audio.mp3"></audio>
     </div>
 
     <div class="section-block reveal">

@@ -1,53 +1,49 @@
-const IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-const AUDIO_EXTS = ['mp3', 'm4a', 'wav', 'ogg', 'aac'];
-const MAX_GALLERY = 40;
-const cacheVersion = Date.now();
+const MAX_GALLERY = 24;
+const GALLERY_BATCH = 6;
 
 let lightbox = null;
-
-function withVersion(path) {
-  return `${path}?v=${cacheVersion}`;
-}
 
 function probeImage(path) {
   return new Promise((resolve) => {
     const img = new Image();
-    img.onload = () => resolve(withVersion(path));
+    img.onload = () => resolve(path);
     img.onerror = () => resolve(null);
-    img.src = withVersion(path);
+    img.src = path;
   });
 }
 
-function probeAudio(path) {
-  return new Promise((resolve) => {
-    const audio = new Audio();
-    audio.preload = 'metadata';
-    audio.onloadedmetadata = () => resolve(withVersion(path));
-    audio.onerror = () => resolve(null);
-    audio.src = withVersion(path);
-  });
-}
-
-async function findByBase(base, extensions, probe) {
-  const found = await Promise.all(extensions.map((ext) => probe(`${base}.${ext}`)));
-  return found.find(Boolean) || null;
+async function findByBase(base) {
+  const jpg = await probeImage(`${base}.jpg`);
+  if (jpg) return jpg;
+  return probeImage(`${base}.png`);
 }
 
 async function loadLetter(folder) {
-  return findByBase(`${folder}/thu`, IMAGE_EXTS, probeImage);
+  return findByBase(`${folder}/thu`);
 }
 
 async function loadGallery(folder) {
   const images = [];
-  for (let i = 1; i <= MAX_GALLERY; i += 1) {
-    const found = await findByBase(`${folder}/${i}`, IMAGE_EXTS, probeImage);
-    if (!found) break;
-    images.push(found);
+  for (let start = 1; start <= MAX_GALLERY; start += GALLERY_BATCH) {
+    const indexes = [];
+    for (let i = start; i < start + GALLERY_BATCH && i <= MAX_GALLERY; i += 1) {
+      indexes.push(i);
+    }
+    const found = await Promise.all(indexes.map((i) => probeImage(`${folder}/${i}.jpg`)));
+    for (let n = 0; n < found.length; n += 1) {
+      if (found[n]) {
+        images.push(found[n]);
+        continue;
+      }
+      const png = await probeImage(`${folder}/${indexes[n]}.png`);
+      if (!png) return images;
+      images.push(png);
+    }
   }
   return images;
 }
 
-function renderLetter(container, src, alt, folderName) {
+function renderLetter(container, src, alt, folderName, priority) {
   container.replaceChildren();
   if (!src) {
     const hint = document.createElement('p');
@@ -59,10 +55,13 @@ function renderLetter(container, src, alt, folderName) {
   const img = document.createElement('img');
   img.src = src;
   img.alt = alt;
+  img.decoding = 'async';
+  if (priority) img.fetchPriority = 'high';
+  else img.loading = 'lazy';
   container.appendChild(img);
 }
 
-function renderGallery(container, images, folderName) {
+function renderGallery(container, images, folderName, lazy) {
   container.replaceChildren();
   if (!images.length) {
     const hint = document.createElement('p');
@@ -82,47 +81,15 @@ function renderGallery(container, images, folderName) {
     const img = document.createElement('img');
     img.src = src;
     img.alt = `Ảnh ${index + 1}`;
+    img.decoding = 'async';
+    if (lazy) img.loading = 'lazy';
     link.appendChild(img);
     grid.appendChild(link);
   });
   container.appendChild(grid);
 }
 
-async function loadAudio() {
-  const player = document.getElementById('player');
-  const hint = document.getElementById('audio-hint');
-  const src = await findByBase('audio/audio', AUDIO_EXTS, probeAudio);
-  if (!src) {
-    player.hidden = true;
-    hint.hidden = false;
-    return;
-  }
-  player.src = src;
-  hint.hidden = true;
-}
-
-async function loadMedia() {
-  const [letter1, photos1, letter2, photos2] = await Promise.all([
-    loadLetter('image1'),
-    loadGallery('image1'),
-    loadLetter('image2'),
-    loadGallery('image2'),
-  ]);
-
-  renderLetter(
-    document.getElementById('letter-1'),
-    letter1,
-    'Bức thư phần 1',
-    'image1'
-  );
-  renderGallery(document.getElementById('gallery-1'), photos1, 'image1');
-  renderLetter(
-    document.getElementById('letter-2'),
-    letter2,
-    'Bức thư phần 2',
-    'image2'
-  );
-  renderGallery(document.getElementById('gallery-2'), photos2, 'image2');
+function setupLightbox() {
   if (lightbox) lightbox.destroy();
   lightbox = GLightbox({
     selector: '.glightbox',
@@ -134,7 +101,29 @@ async function loadMedia() {
     closeEffect: 'fade',
     slideEffect: 'slide',
   });
-  await loadAudio();
+}
+
+async function loadMedia() {
+  const lettersReady = Promise.all([
+    loadLetter('image1').then((src) => {
+      renderLetter(document.getElementById('letter-1'), src, 'Bức thư phần 1', 'image1', true);
+    }),
+    loadLetter('image2').then((src) => {
+      renderLetter(document.getElementById('letter-2'), src, 'Bức thư phần 2', 'image2', false);
+    }),
+  ]);
+  const galleriesReady = Promise.all([
+    loadGallery('image1').then((images) => {
+      renderGallery(document.getElementById('gallery-1'), images, 'image1', false);
+    }),
+    loadGallery('image2').then((images) => {
+      renderGallery(document.getElementById('gallery-2'), images, 'image2', true);
+    }),
+  ]);
+
+  await lettersReady;
+  await galleriesReady;
+  setupLightbox();
 }
 
 function openEnvelope() {
